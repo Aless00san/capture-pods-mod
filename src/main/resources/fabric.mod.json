@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "capture-pods",
+	"version": "${version}",
+	"name": "Capture pods",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/capture-pods/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.alpaca.capturepods.CapturePods"
+		],
+		"fabric-datagen": [
+			"net.alpaca.capturepods.CapturePodsDataGenerator"
+		]
+	},
+	"mixins": [
+		"capture-pods.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
