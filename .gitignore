@@ -38,3 +38,5 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+/libs/ForgeConfigAPIPort-v8.0.3-1.20.1-Fabric.jar
+/libs/open-parties-and-claims-fabric-1.20.1-0.25.8.jar
