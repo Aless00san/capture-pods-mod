@@ -26,4 +26,5 @@ public class ModItems {
         CapturePods.LOGGER.info("Registering Mod items for : " + CapturePods.MOD_ID);
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(ModItems::customIngredients);
     }
+
 }
