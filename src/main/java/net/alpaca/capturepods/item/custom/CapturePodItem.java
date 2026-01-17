@@ -25,6 +25,7 @@ import xaero.pac.common.server.api.OpenPACServerAPI;
 import xaero.pac.common.server.claims.api.IServerClaimsManagerAPI;
 import xaero.pac.common.server.parties.party.api.IPartyManagerAPI;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,26 +34,6 @@ public class CapturePodItem extends Item {
 
     public CapturePodItem(Settings settings) {
         super(settings);
-    }
-
-    /**
-     * Gets the claim data for the chunk a given entity is standing
-     *
-     * @param user      the player entity
-     * @param entity    the entity to check
-     * @param serverAPI the parties and claims API
-     * @return the claim state of the chunk
-     */
-    private static @Nullable IPlayerChunkClaimAPI getChunkClaimData(PlayerEntity user, LivingEntity entity, OpenPACServerAPI serverAPI) {
-        IServerClaimsManagerAPI claimsManager = serverAPI.getServerClaimsManager();
-        ServerWorld world = (ServerWorld) user.getWorld();
-        Identifier dimId = world.getRegistryKey().getValue();
-
-        // Get chunk of the entity
-        ChunkPos chunkPos = new ChunkPos(entity.getBlockPos());
-
-        // Returns the claim state for given Chunk
-        return claimsManager.get(dimId, chunkPos);
     }
 
     /**
@@ -107,12 +88,12 @@ public class CapturePodItem extends Item {
             return ActionResult.SUCCESS;
         }
 
-        OpenPACServerAPI serverAPI = OpenPACServerAPI.get(user.getServer());
+        OpenPACServerAPI serverAPI = OpenPACServerAPI.get(Objects.requireNonNull(user.getServer()));
         IPlayerChunkClaimAPI claimState = getChunkClaimData(user, user.getChunkPos(), serverAPI);
 
         boolean allowParty = AutoConfig.getConfigHolder(CapturePodsConfig.class).getConfig().allowPartyCapture;
 
-        boolean sameParty = false;
+        boolean sameParty;
         if (!allowParty && claimState != null) {
             UUID ownerId = claimState.getPlayerId();
             UUID userId = user.getUuid();
@@ -133,6 +114,7 @@ public class CapturePodItem extends Item {
             createEmptyStackNbtData(actualStack);
         }
 
+        assert actualStack.getNbt() != null;
         if (!actualStack.getNbt().getBoolean("full")) {
             NbtCompound aux = new NbtCompound();
 
@@ -157,12 +139,13 @@ public class CapturePodItem extends Item {
     public ActionResult useOnBlock(ItemUsageContext context) {
         PlayerEntity user = context.getPlayer();
 
+        assert user != null;
         if (user.getWorld().isClient) {
             return ActionResult.SUCCESS;
         }
 
         if (user.isSneaking() && user.getMainHandStack().hasGlint()) {
-            OpenPACServerAPI serverAPI = OpenPACServerAPI.get(user.getServer());
+            OpenPACServerAPI serverAPI = OpenPACServerAPI.get(Objects.requireNonNull(user.getServer()));
 
             IPlayerChunkClaimAPI claimState = getContextClaimData(user, context, serverAPI);
             if (claimState != null) { //Somebody OWS the claim
@@ -173,7 +156,7 @@ public class CapturePodItem extends Item {
                 if (!ownerId.equals(userId)) {
                     boolean allowParty = AutoConfig.getConfigHolder(CapturePodsConfig.class).getConfig().allowPartyRelease;
 
-                    boolean sameParty = false;
+                    boolean sameParty;
                     if (!allowParty) {
                         IPartyManagerAPI partyManager = serverAPI.getPartyManager();
                         sameParty = Optional.ofNullable(partyManager.getPartyByMember(ownerId)).map(party -> party.getMemberInfoStream().anyMatch(member -> member.getUUID().equals(userId))).orElse(false);
