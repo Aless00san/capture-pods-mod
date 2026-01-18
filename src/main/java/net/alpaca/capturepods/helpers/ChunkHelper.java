@@ -1,0 +1,34 @@
+package net.alpaca.capturepods.helpers;
+
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
+import xaero.pac.common.claims.player.api.IPlayerChunkClaimAPI;
+import xaero.pac.common.server.api.OpenPACServerAPI;
+import xaero.pac.common.server.claims.api.IServerClaimsManagerAPI;
+
+public final class ChunkHelper {
+
+    private ChunkHelper() {
+    }
+
+    /**
+     *
+     * Gets the claim data for a given ItemUsageContext
+     *
+     * @param user      the player
+     * @param context   the context of the action
+     * @param serverAPI the open claims and parties API
+     * @return the claim state of the affected chunk
+     */
+    private IPlayerChunkClaimAPI getChunkClaimData(PlayerEntity user, ItemUsageContext context,
+            OpenPACServerAPI serverAPI) {
+        IServerClaimsManagerAPI claimsManager = serverAPI.getServerClaimsManager();
+        ServerWorld world = (ServerWorld) user.getWorld();
+        Identifier dimId = world.getRegistryKey().getValue();
+
+        // Returns the claim state for given block
+        return claimsManager.get(dimId, context.getBlockPos());
+    }
+}

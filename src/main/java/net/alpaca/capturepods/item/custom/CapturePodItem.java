@@ -25,15 +25,38 @@ import xaero.pac.common.server.api.OpenPACServerAPI;
 import xaero.pac.common.server.claims.api.IServerClaimsManagerAPI;
 import xaero.pac.common.server.parties.party.api.IPartyManagerAPI;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-
+/**
+ * The capture pod item class
+ * Handles the interactions with the capture pod item
+ */
 public class CapturePodItem extends Item {
 
     public CapturePodItem(Settings settings) {
         super(settings);
+    }
+
+    /**
+     * Gets the claim data for the chunk a given entity is standing
+     *
+     * @param user      the player entity
+     * @param entity    the entity to check
+     * @param serverAPI the parties and claims API
+     * @return the claim state of the chunk
+     */
+    private static @Nullable IPlayerChunkClaimAPI getChunkClaimData(PlayerEntity user, LivingEntity entity,
+            OpenPACServerAPI serverAPI) {
+        IServerClaimsManagerAPI claimsManager = serverAPI.getServerClaimsManager();
+        ServerWorld world = (ServerWorld) user.getWorld();
+        Identifier dimId = world.getRegistryKey().getValue();
+
+        // Get chunk of the entity
+        ChunkPos chunkPos = new ChunkPos(entity.getBlockPos());
+
+        // Returns the claim state for given Chunk
+        return claimsManager.get(dimId, chunkPos);
     }
 
     /**
@@ -44,7 +67,8 @@ public class CapturePodItem extends Item {
      * @param serverAPI the parties and claims API
      * @return the claim state for given Chunk
      */
-    private static @Nullable IPlayerChunkClaimAPI getChunkClaimData(PlayerEntity user, ChunkPos chunkPos, OpenPACServerAPI serverAPI) {
+    private static @Nullable IPlayerChunkClaimAPI getChunkClaimData(PlayerEntity user, ChunkPos chunkPos,
+            OpenPACServerAPI serverAPI) {
         IServerClaimsManagerAPI claimsManager = serverAPI.getServerClaimsManager();
         ServerWorld world = (ServerWorld) user.getWorld();
         Identifier dimId = world.getRegistryKey().getValue();
@@ -54,24 +78,9 @@ public class CapturePodItem extends Item {
     }
 
     /**
-     *
-     * Gets the claim data for a given ItemUsageContext
-     *
-     * @param user      the player
-     * @param context   the context of the action
-     * @param serverAPI the open claims and parties API
-     * @return the claim state of the affected chunk
-     */
-    private IPlayerChunkClaimAPI getContextClaimData(PlayerEntity user, ItemUsageContext context, OpenPACServerAPI serverAPI) {
-        IServerClaimsManagerAPI claimsManager = serverAPI.getServerClaimsManager();
-        ServerWorld world = (ServerWorld) user.getWorld();
-        Identifier dimId = world.getRegistryKey().getValue();
-
-        // Returns the claim state for given block
-        return claimsManager.get(dimId, context.getBlockPos());
-    }
-
-    /**
+     * 
+     * Handles the interaction with the capture pod item on entities
+     * 
      * @param stack  the capture pod item
      * @param user   the user that initiates the action
      * @param entity the entity that the action points to
@@ -80,7 +89,8 @@ public class CapturePodItem extends Item {
      */
     @Override
     public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
-        if (!(entity instanceof AnimalEntity || entity instanceof WaterCreatureEntity || entity instanceof MerchantEntity)) {
+        if (!(entity instanceof AnimalEntity || entity instanceof WaterCreatureEntity
+                || entity instanceof MerchantEntity)) {
             return ActionResult.PASS;
         }
 
@@ -88,22 +98,26 @@ public class CapturePodItem extends Item {
             return ActionResult.SUCCESS;
         }
 
-        OpenPACServerAPI serverAPI = OpenPACServerAPI.get(Objects.requireNonNull(user.getServer()));
+        OpenPACServerAPI serverAPI = OpenPACServerAPI.get(user.getServer());
         IPlayerChunkClaimAPI claimState = getChunkClaimData(user, user.getChunkPos(), serverAPI);
 
         boolean allowParty = AutoConfig.getConfigHolder(CapturePodsConfig.class).getConfig().allowPartyCapture;
 
-        boolean sameParty;
+        boolean sameParty = false;
         if (!allowParty && claimState != null) {
             UUID ownerId = claimState.getPlayerId();
             UUID userId = user.getUuid();
 
             IPartyManagerAPI partyManager = serverAPI.getPartyManager();
-            sameParty = Optional.ofNullable(partyManager.getPartyByMember(ownerId)).map(party -> party.getMemberInfoStream().anyMatch(member -> member.getUUID().equals(userId))).orElse(false);
+            sameParty = Optional.ofNullable(partyManager.getPartyByMember(ownerId))
+                    .map(party -> party.getMemberInfoStream().anyMatch(member -> member.getUUID().equals(userId)))
+                    .orElse(false);
 
             if (!ownerId.equals(userId) && sameParty) {
-                //If party members aren't allowed, and users are of the same party
-                user.sendMessage(Text.literal("Your party does not allow the use of capture pods on another member's claim."), false);
+                // If party members aren't allowed, and users are of the same party
+                user.sendMessage(
+                        Text.literal("Your party does not allow the use of capture pods on another member's claim."),
+                        false);
                 return ActionResult.FAIL;
             }
         }
@@ -114,7 +128,6 @@ public class CapturePodItem extends Item {
             createEmptyStackNbtData(actualStack);
         }
 
-        assert actualStack.getNbt() != null;
         if (!actualStack.getNbt().getBoolean("full")) {
             NbtCompound aux = new NbtCompound();
 
@@ -132,6 +145,9 @@ public class CapturePodItem extends Item {
     }
 
     /**
+     * 
+     * Handles the interaction with the capture pod item on blocks
+     * 
      * @param context the context of the action
      * @return the result of the action
      */
@@ -139,31 +155,36 @@ public class CapturePodItem extends Item {
     public ActionResult useOnBlock(ItemUsageContext context) {
         PlayerEntity user = context.getPlayer();
 
-        assert user != null;
         if (user.getWorld().isClient) {
             return ActionResult.SUCCESS;
         }
 
         if (user.isSneaking() && user.getMainHandStack().hasGlint()) {
-            OpenPACServerAPI serverAPI = OpenPACServerAPI.get(Objects.requireNonNull(user.getServer()));
+            OpenPACServerAPI serverAPI = OpenPACServerAPI.get(user.getServer());
 
             IPlayerChunkClaimAPI claimState = getContextClaimData(user, context, serverAPI);
-            if (claimState != null) { //Somebody OWS the claim
+            if (claimState != null) { // Somebody OWS the claim
                 UUID ownerId = claimState.getPlayerId();
                 UUID userId = user.getUuid();
 
                 // If not the owner
                 if (!ownerId.equals(userId)) {
-                    boolean allowParty = AutoConfig.getConfigHolder(CapturePodsConfig.class).getConfig().allowPartyRelease;
+                    boolean allowParty = AutoConfig.getConfigHolder(CapturePodsConfig.class)
+                            .getConfig().allowPartyRelease;
 
-                    boolean sameParty;
+                    boolean sameParty = false;
                     if (!allowParty) {
                         IPartyManagerAPI partyManager = serverAPI.getPartyManager();
-                        sameParty = Optional.ofNullable(partyManager.getPartyByMember(ownerId)).map(party -> party.getMemberInfoStream().anyMatch(member -> member.getUUID().equals(userId))).orElse(false);
+                        sameParty = Optional
+                                .ofNullable(partyManager.getPartyByMember(ownerId)).map(party -> party
+                                        .getMemberInfoStream().anyMatch(member -> member.getUUID().equals(userId)))
+                                .orElse(false);
 
                         if (sameParty) {
-                            //If party members aren't allowed, and users are of the same party
-                            user.sendMessage(Text.literal("Your party does not allow the release of capture pods on another member's claim."), false);
+                            // If party members aren't allowed, and users are of the same party
+                            user.sendMessage(Text.literal(
+                                    "Your party does not allow the release of capture pods on another member's claim."),
+                                    false);
                             return ActionResult.FAIL;
                         }
                     }
@@ -178,7 +199,8 @@ public class CapturePodItem extends Item {
                     Entity mob = type.create(context.getWorld());
                     if (mob instanceof LivingEntity) {
                         mob.readNbt(mobData);
-                        mob.refreshPositionAndAngles(context.getBlockPos().getX(), context.getBlockPos().getY() + 1, context.getBlockPos().getZ(), 0, 0);
+                        mob.refreshPositionAndAngles(context.getBlockPos().getX(), context.getBlockPos().getY() + 1,
+                                context.getBlockPos().getZ(), 0, 0);
                         context.getWorld().spawnEntity(mob);
                         context.getPlayer().getMainHandStack().setNbt(new NbtCompound());
                     }
@@ -186,7 +208,6 @@ public class CapturePodItem extends Item {
             }
 
             context.getPlayer().getMainHandStack().setNbt(new NbtCompound());
-
 
         }
         return ActionResult.SUCCESS;
