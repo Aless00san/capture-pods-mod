@@ -1,14 +1,11 @@
 package net.alpaca.capturepods.helpers;
 
-import org.jetbrains.annotations.NonNls;
-
-import blue.endless.jankson.annotation.NonnullByDefault;
 import net.minecraft.server.network.ServerPlayerEntity;
 import xaero.pac.common.server.api.OpenPACServerAPI;
-import xaero.pac.common.server.parties.party.IServerParty;
 import xaero.pac.common.server.parties.party.api.IPartyManagerAPI;
 import xaero.pac.common.server.parties.party.api.IServerPartyAPI;
-import xaero.pac.common.server.player.permission.api.IPlayerPermissionSystemAPI;
+
+import java.util.UUID;
 
 public final class PartyAuthorityHelper {
     private PartyAuthorityHelper() {
@@ -16,18 +13,29 @@ public final class PartyAuthorityHelper {
     }
 
     public static boolean allowedToChangePartySettings(ServerPlayerEntity player) {
-        // TOOD: Implement party authority system, check if the player is the owner of
-        // the party
         OpenPACServerAPI api = OpenPACServerAPI.get(player.getServer());
 
         if (api != null) {
             IPartyManagerAPI partyManager = api.getPartyManager();
             IServerPartyAPI party = partyManager.getPartyByMember(player.getUuid());
 
-            if (party == null) {
+            if (party == null) { //User is not in a party
                 return false;
             }
+
+            UUID playerUUID = player.getUuid();
+            UUID ownerUUID = party.getOwner().getUUID();
+
+            return (playerUUID.equals(ownerUUID));
         }
         return false;
+    }
+
+    public static IServerPartyAPI getActiveParty(ServerPlayerEntity player) {
+        OpenPACServerAPI api = OpenPACServerAPI.get(player.getServer());
+        IServerPartyAPI party;
+        IPartyManagerAPI partyManager = api.getPartyManager();
+        party = partyManager.getPartyByMember(player.getUuid());
+        return party;
     }
 }
