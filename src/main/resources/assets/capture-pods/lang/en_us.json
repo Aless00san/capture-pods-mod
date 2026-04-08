@@ -1,3 +1,6 @@
 {
-  "item.capture-pods.capture_pod": "Capture Pod"
+  "item.capture-pods.capture_pod": "Capture Pod",
+  "text.autoconfig.capturepods.title": "Capture Pods Config", 
+  "text.autoconfig.capturepods.option.allowPartyCapture": "Allow party captures", 
+  "text.autoconfig.capturepods.option.allowPartyRelease": "Allow party releases"
 }

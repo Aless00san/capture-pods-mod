@@ -44,7 +44,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
     // Open Parties and Claims 
     modImplementation "curse.maven:project-547434:7260491"
@@ -52,11 +52,9 @@ dependencies {
 
     // Config mods
     modImplementation "me.shedaniel.cloth:cloth-config-fabric:11.1.106"
-    modImplementation name: "autoconfig1u-3.4.0"
     modImplementation name: "modmenu-7.2.2"
 
 }
-
 processResources {
     inputs.property "version", project.version
 

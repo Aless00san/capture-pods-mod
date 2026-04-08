@@ -22,7 +22,7 @@ public final class ChunkHelper {
      * @param serverAPI the open claims and parties API
      * @return the claim state of the affected chunk
      */
-    private IPlayerChunkClaimAPI getChunkClaimData(PlayerEntity user, ItemUsageContext context,
+    public static IPlayerChunkClaimAPI getContextClaimData(PlayerEntity user, ItemUsageContext context,
             OpenPACServerAPI serverAPI) {
         IServerClaimsManagerAPI claimsManager = serverAPI.getServerClaimsManager();
         ServerWorld world = (ServerWorld) user.getWorld();

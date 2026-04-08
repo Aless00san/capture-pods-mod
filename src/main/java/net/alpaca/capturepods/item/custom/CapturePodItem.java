@@ -2,6 +2,7 @@ package net.alpaca.capturepods.item.custom;
 
 import me.shedaniel.autoconfig.AutoConfig;
 import net.alpaca.capturepods.config.CapturePodsConfig;
+import net.alpaca.capturepods.helpers.ChunkHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -162,8 +163,8 @@ public class CapturePodItem extends Item {
         if (user.isSneaking() && user.getMainHandStack().hasGlint()) {
             OpenPACServerAPI serverAPI = OpenPACServerAPI.get(user.getServer());
 
-            IPlayerChunkClaimAPI claimState = getContextClaimData(user, context, serverAPI);
-            if (claimState != null) { // Somebody OWS the claim
+            IPlayerChunkClaimAPI claimState = ChunkHelper.getContextClaimData(user, context, serverAPI);
+            if (claimState != null) { // Somebody OWNS the claim
                 UUID ownerId = claimState.getPlayerId();
                 UUID userId = user.getUuid();
 
